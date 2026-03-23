@@ -5,7 +5,7 @@ import api from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Save, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { ClientSelect } from '@/components/ClientSelect';
 

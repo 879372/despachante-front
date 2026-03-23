@@ -230,7 +230,7 @@ export function Dashboard() {
                               paddingAngle={5}
                               dataKey="value"
                            >
-                              {metrics.pie_chart_data.map((entry, index) => (
+                              {metrics.pie_chart_data.map((_, index) => (
                                  <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="none" />
                               ))}
                            </Pie>
