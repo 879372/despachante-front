@@ -5,7 +5,7 @@ import api from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Search, FileText, FileDown, Filter } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, FileText, FileDown, Filter, ReceiptText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ClientSelect } from '@/components/ClientSelect';
@@ -182,6 +182,25 @@ export function ProcessList() {
         styles: { fontSize: 9, cellPadding: 4 },
       });
 
+      const attachments = processes.filter((p: Process) => p.attachment);
+      if (attachments.length > 0) {
+        // @ts-ignore
+        const finalY = (doc.lastAutoTable as any).finalY + 15;
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 41, 59);
+        doc.text("Anexos Vinculados na Origem:", 14, finalY);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(79, 70, 229); // indigo
+        attachments.forEach((p: Process, i: number) => {
+            const linkY = finalY + 8 + (i * 6);
+            if (p.attachment) {
+               doc.textWithLink(`[ACESSAR O ARQUIVO] Placa: ${p.plate.toUpperCase()} - ${p.service_type}`, 14, linkY, { url: p.attachment });
+            }
+        });
+      }
+
       doc.save(`Relatorio_${clientName.replace(/\s+/g, '_')}.pdf`);
     } catch (err) {
       console.error(err);
@@ -189,6 +208,69 @@ export function ProcessList() {
     } finally {
       setExporting(false);
     }
+  };
+
+  const handleGenerateReceipt = (process: Process) => {
+      const doc = new jsPDF();
+      doc.setFillColor(79, 70, 229);
+      doc.rect(0, 0, 210, 25, 'F');
+      
+      const total = Number(process.service_value || 0) + Number(process.tax_value || 0);
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text('TERMO DE CONCLUSÃO DE SERVIÇO', 105, 17, { align: 'center' });
+      
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(14);
+      doc.text(`Cliente: ${process.client_name}`, 14, 40);
+      
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(71, 85, 105);
+      
+      const statement = `Declaramos para os devidos fins que o serviço do despachante documentado sob requisição de SR(A). ${process.client_name} encontra-se FINALIZADO. Todos os trâmites legais junto aos órgãos de trânsito exigidos para esta placa foram devidamente quitados e concluídos com êxito.`;
+      const splitText = doc.splitTextToSize(statement, 180);
+      doc.text(splitText, 14, 50);
+
+      // Dados do Veículo Block
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(11);
+      doc.text("IDENTIFICAÇÃO DO PROCESSO", 14, 80);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(71, 85, 105);
+      doc.text(`• Veículo (Placa): ${process.plate.toUpperCase()}`, 14, 90);
+      doc.text(`• Categoria do Serviço: ${process.service_type}`, 14, 97);
+      doc.text(`• Renavam: ${process.renavam || 'Não informado'}`, 14, 104);
+
+      // Financeiro Block
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(30, 41, 59);
+      doc.text("EXTRATO FINANCEIRO E DECLARAÇÃO DE QUITAÇÃO", 14, 120);
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(71, 85, 105);
+      doc.text(`• Honorários Profissionais: ${formatCurrency(process.service_value || 0)}`, 14, 130);
+      doc.text(`• Guia de Taxas Extras: ${formatCurrency(process.tax_value || 0)}`, 14, 137);
+      doc.setFont("helvetica", "bold");
+      doc.text(`• Repasse Total Pago: ${formatCurrency(total)}`, 14, 144);
+      doc.setFont("helvetica", "normal");
+      doc.text(`• Situação: ${process.payment_status} ${process.payment_method ? `(${process.payment_method})` : ''}`, 14, 151);
+      
+      doc.text(`• Emissão do Certificado Oficial: ${new Date().toLocaleDateString('pt-BR')}`, 14, 165);
+      
+      // Assinatura
+      doc.setLineWidth(0.5);
+      doc.setDrawColor(203, 213, 225);
+      doc.line(60, 220, 150, 220);
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Despachante Oficial / Profissional Responsável', 105, 226, { align: 'center' });
+
+      doc.save(`Termo_Conclusao_${process.plate.toUpperCase()}.pdf`);
   };
 
   const statusColors: Record<string, string> = {
@@ -361,6 +443,11 @@ export function ProcessList() {
                     </TableCell>
                     <TableCell className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">
+                        {process.status === 'Finalizado' && process.payment_status === 'Pago' && (
+                          <Button title="Gerar Recibo de Prestação de Serviço" variant="outline" size="sm" className="h-8 w-8 p-0 rounded-lg text-emerald-600 border-emerald-100 hover:bg-emerald-50 transition-colors" onClick={() => handleGenerateReceipt(process)}>
+                            <ReceiptText className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Link to={`/processes/${process.id}/edit`}>
                           <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-lg text-indigo-600 border-indigo-100 hover:bg-indigo-50">
                             <Edit className="h-4 w-4" />
