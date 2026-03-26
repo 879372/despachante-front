@@ -197,8 +197,8 @@ export function ProcessForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-slate-600">Taxas Extras (R$) *</Label>
-                  <Input name="tax_value" type="number" step="0.01" required value={formData.tax_value || ''} onChange={(e) => handleProcessChange(index, e)} className={`font-semibold text-orange-700 ${inputClass}`} placeholder="0.00" />
+                  <Label className="text-xs font-semibold text-slate-600">Taxas Extras (R$)</Label>
+                  <Input name="tax_value" type="number" step="0.01" value={formData.tax_value || ''} onChange={(e) => handleProcessChange(index, e)} className={`font-semibold text-orange-700 ${inputClass}`} placeholder="0.00" />
                 </div>
                 
                 <div className="space-y-1">
